@@ -8,7 +8,7 @@ tags:
   - tool
   - combat
 manifest: https://daggerheight.ijpedraza.com/manifest.json
-learn-more: https://github.com/nachoijp/daggerheight/issues
+learn-more: https://github.com/nachoijp/daggerheight#readme
 ---
 
 # Daggerheight
