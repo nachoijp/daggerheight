@@ -1,9 +1,0 @@
-{
-  "name": "Daggerheight",
-  "version": "1.0.0",
-  "manifest_version": 3,
-  "author": "Ignacio Pedraza",
-  "icon": "/logo.svg",
-  "background_url": "/background.html",
-  "description": "Mark Daggerheart's range bands (Very Close, Close, Far, Very Far; Up or Down) on any token."
-}

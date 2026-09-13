@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 *.zip
+daggerheight-deploy*/
 
 # Editor directories and files
 .vscode/*
