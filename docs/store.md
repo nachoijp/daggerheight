@@ -28,14 +28,15 @@ colored, stacked triangles right on the token.
 
 ![All 8 range markers](https://raw.githubusercontent.com/nachoijp/daggerheight/main/docs/screenshot-ranges.png)
 
-Each token can have its own marker, and markers move and scale together with
-their token.
+Each token can have its own marker, and markers move together with their
+token (scaling with it too, unless you turn that off in settings).
 
 ## Settings
 
 The gear icon opens a settings panel (shared by the whole room, set by the GM)
-to customize icon size, colors per range, and where the markers are placed
-relative to the token (left, right, top, or bottom).
+to customize icon size, colors per range, where the markers are placed
+relative to the token (left, right, top, or bottom), and whether markers
+scale with the token or keep a fixed size when you resize it.
 
 ![Settings panel](https://raw.githubusercontent.com/nachoijp/daggerheight/main/docs/screenshot-settings.png)
 

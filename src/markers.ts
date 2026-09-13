@@ -87,12 +87,17 @@ export function buildAltitudeMarker(
     .strokeOpacity(0.65)
     .strokeWidth(dpi * 0.035)
     .position(anchor)
-    .scale({ x: token.scale.x, y: token.scale.y })
+    .scale(
+      settings.scaleWithToken
+        ? { x: token.scale.x, y: token.scale.y }
+        : { x: 1, y: 1 }
+    )
     .attachedTo(token.id)
     .layer("ATTACHMENT")
     .disableHit(true)
     .locked(true)
     .visible(token.visible)
+    .disableAttachmentBehavior(settings.scaleWithToken ? [] : ["SCALE"])
     .name(`Daggerheart Altitude: ${rank.id} (${direction})`)
     .metadata({
       [METADATA_KEY]: { rank: rank.id, direction } satisfies AltitudeMarkerState,

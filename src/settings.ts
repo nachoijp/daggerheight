@@ -10,12 +10,14 @@ export interface AltitudeSettings {
   iconSize: number;
   colors: Record<RankId, string>;
   position: Position;
+  scaleWithToken: boolean;
 }
 
 export const DEFAULT_SETTINGS: AltitudeSettings = {
   iconSize: 1,
   colors: { ...DEFAULT_COLORS },
   position: "LEFT",
+  scaleWithToken: true,
 };
 
 const SETTINGS_KEY = getPluginId("settings");
@@ -23,7 +25,12 @@ const LANGUAGE_KEY = getPluginId("language");
 
 function mergeSettings(stored: unknown): AltitudeSettings {
   if (!isPlainObject(stored)) {
-    return { iconSize: DEFAULT_SETTINGS.iconSize, colors: { ...DEFAULT_SETTINGS.colors }, position: DEFAULT_SETTINGS.position };
+    return {
+      iconSize: DEFAULT_SETTINGS.iconSize,
+      colors: { ...DEFAULT_SETTINGS.colors },
+      position: DEFAULT_SETTINGS.position,
+      scaleWithToken: DEFAULT_SETTINGS.scaleWithToken,
+    };
   }
   const iconSize =
     typeof stored.iconSize === "number" && Number.isFinite(stored.iconSize)
@@ -36,7 +43,11 @@ function mergeSettings(stored: unknown): AltitudeSettings {
   const position = POSITIONS.includes(stored.position as Position)
     ? (stored.position as Position)
     : DEFAULT_SETTINGS.position;
-  return { iconSize, colors, position };
+  const scaleWithToken =
+    typeof stored.scaleWithToken === "boolean"
+      ? stored.scaleWithToken
+      : DEFAULT_SETTINGS.scaleWithToken;
+  return { iconSize, colors, position, scaleWithToken };
 }
 
 export async function getSettings(): Promise<AltitudeSettings> {

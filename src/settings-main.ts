@@ -42,11 +42,17 @@ const POSITION_OPTIONS: { id: Position; labelKey: "positionLeft" | "positionRigh
   { id: "BOTTOM", labelKey: "positionBottom" },
 ];
 
+const SCALING_OPTIONS: { id: "true" | "false"; labelKey: "scalingWithToken" | "scalingFixed" }[] = [
+  { id: "true", labelKey: "scalingWithToken" },
+  { id: "false", labelKey: "scalingFixed" },
+];
+
 interface FormState {
   language: Language;
   position: Position;
   colors: AltitudeSettings["colors"];
   iconSize: number;
+  scaleWithToken: boolean;
 }
 
 /** Re-draws the whole form from the current (possibly unsaved) form state */
@@ -90,6 +96,13 @@ function draw(state: FormState) {
       ).join("")}
     </div>
 
+    <label class="settings-label">${t(language, "settingsScaling")}</label>
+    <div class="settings-row" id="scaling-row">
+      ${SCALING_OPTIONS.map(
+        (opt) => `<button class="choice-button" data-value="${opt.id}">${t(language, opt.labelKey)}</button>`
+      ).join("")}
+    </div>
+
     <div class="settings-actions">
       <button class="secondary-button" id="cancel-button">${t(language, "cancel")}</button>
       <button class="primary-button" id="save-button">${t(language, "save")}</button>
@@ -105,6 +118,9 @@ function draw(state: FormState) {
   const positionRow = document.getElementById("position-row")!;
   markSelected(positionRow, state.position);
 
+  const scalingRow = document.getElementById("scaling-row")!;
+  markSelected(scalingRow, String(state.scaleWithToken));
+
   const languageSelect = document.getElementById("language-select") as HTMLSelectElement;
   languageSelect.addEventListener("change", () => {
     state.language = languageSelect.value as Language;
@@ -115,6 +131,13 @@ function draw(state: FormState) {
     btn.addEventListener("click", () => {
       state.position = btn.dataset.value as Position;
       markSelected(positionRow, state.position);
+    });
+  });
+
+  scalingRow.querySelectorAll<HTMLButtonElement>(".choice-button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.scaleWithToken = btn.dataset.value === "true";
+      markSelected(scalingRow, String(state.scaleWithToken));
     });
   });
 
@@ -143,6 +166,7 @@ function draw(state: FormState) {
       iconSize: state.iconSize,
       colors: state.colors,
       position: state.position,
+      scaleWithToken: state.scaleWithToken,
     };
     await Promise.all([setSettings(newSettings), setLanguage(state.language)]);
     await refreshAllMarkers(newSettings);
@@ -157,6 +181,7 @@ async function render() {
     position: settings.position,
     colors: { ...settings.colors },
     iconSize: settings.iconSize,
+    scaleWithToken: settings.scaleWithToken,
   });
 }
 

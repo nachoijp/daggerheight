@@ -29,9 +29,10 @@ change to all of them at once.
 ## Settings
 
 The gear icon opens a settings panel — shared by the whole room and set by the
-GM — to customize icon size, colors per range, and where markers sit relative
-to the token (left, right, top, or bottom). Changing a setting updates every
-marker already placed in the scene.
+GM — to customize icon size, colors per range, where markers sit relative to
+the token (left, right, top, or bottom), and whether markers scale together
+with the token or stay a fixed size when you resize it. Changing a setting
+updates every marker already placed in the scene.
 
 ![Settings panel](docs/screenshot-settings.png)
 
