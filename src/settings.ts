@@ -57,7 +57,7 @@ export function onSettingsChange(
 }
 
 export function resolveLanguage(metadata: Metadata): Language {
-  return metadata[LANGUAGE_KEY] === "en" ? "en" : "es";
+  return metadata[LANGUAGE_KEY] === "es" ? "es" : "en";
 }
 
 export async function getLanguage(): Promise<Language> {
