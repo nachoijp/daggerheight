@@ -1,15 +1,12 @@
 import OBR, { buildPath, isPath } from "@owlbear-rodeo/sdk";
 import type { Image, Item, Path } from "@owlbear-rodeo/sdk";
 import { getPluginId } from "./pluginId";
-import { RANKS, buildTriangleStackCommands } from "./altitude";
+import { RANKS, buildIconStackCommands, getStrokeWidthRatio } from "./altitude";
 import type { AltitudeMarkerState, AltitudeRank, Direction } from "./altitude";
 import type { AltitudeSettings } from "./settings";
 import { isPlainObject } from "./util";
 
 export const METADATA_KEY = getPluginId("metadata");
-
-/** How far, in grid cells, the marker sits from the token's edge */
-const MARGIN_RATIO = 0.12;
 
 export function getMarkerState(item: Item): AltitudeMarkerState | undefined {
   const metadata = item.metadata[METADATA_KEY];
@@ -54,7 +51,7 @@ export function buildAltitudeMarker(
     x: token.position.x - offsetX * token.scale.x,
     y: token.position.y - offsetY * token.scale.y,
   };
-  const margin = MARGIN_RATIO * dpi;
+  const margin = settings.iconDistance * dpi;
   const anchor = (() => {
     switch (settings.position) {
       case "RIGHT":
@@ -69,7 +66,8 @@ export function buildAltitudeMarker(
     }
   })();
 
-  const commands = buildTriangleStackCommands(
+  const commands = buildIconStackCommands(
+    settings.iconShape,
     rank.count,
     direction,
     dpi,
@@ -85,7 +83,7 @@ export function buildAltitudeMarker(
     .fillOpacity(1)
     .strokeColor("#111827")
     .strokeOpacity(0.65)
-    .strokeWidth(dpi * 0.035)
+    .strokeWidth(dpi * getStrokeWidthRatio(settings.iconShape))
     .position(anchor)
     .scale(
       settings.scaleWithToken

@@ -1,7 +1,7 @@
 import OBR from "@owlbear-rodeo/sdk";
 import type { Image, Path } from "@owlbear-rodeo/sdk";
 import "./style.css";
-import { DIRECTIONS, RANKS, buttonId, trianglesPreviewSvg } from "./altitude";
+import { DIRECTIONS, RANKS, buttonId, iconStackPreviewSvg } from "./altitude";
 import {
   buildAltitudeMarker,
   getAltitudeMarkers,
@@ -13,23 +13,53 @@ import type { AltitudeSettings } from "./settings";
 import { getPluginId } from "./pluginId";
 import { watchTheme } from "./theme";
 
+// Settings can now change in quick succession (each debounced tick of a live
+// preview in the settings modal), so overlapping render() calls could
+// otherwise resolve out of order and leave the panel showing stale settings.
+let renderGeneration = 0;
+
 async function render() {
+  const generation = ++renderGeneration;
   const [language, settings] = await Promise.all([getLanguage(), getSettings()]);
+  if (generation !== renderGeneration) {
+    return;
+  }
+
+  const visibleDirections = settings.showDown
+    ? DIRECTIONS
+    : DIRECTIONS.filter((direction) => direction.id !== "DOWN");
+  const directionArrow = { UP: "↑", DOWN: "↓" } as const;
+
+  const showDirectionColumn = settings.showRankLabels;
 
   const app = document.querySelector<HTMLDivElement>("#app")!;
   app.innerHTML = `
     <table class="altitude-table">
-      <thead>
-        <tr>
-          <th></th>
-          ${RANKS.map((rank) => `<th>${t(language, rank.labelKey)}</th>`).join("")}
-        </tr>
-      </thead>
+      <colgroup>
+        ${showDirectionColumn ? '<col class="direction-col" />' : ""}
+        ${RANKS.map(() => "<col />").join("")}
+      </colgroup>
+      ${
+        settings.showRankLabels
+          ? `
+            <thead>
+              <tr>
+                <th></th>
+                ${RANKS.map((rank) => `<th>${t(language, rank.labelKey)}</th>`).join("")}
+              </tr>
+            </thead>
+          `
+          : ""
+      }
       <tbody>
-        ${DIRECTIONS.map(
+        ${visibleDirections.map(
           (direction) => `
             <tr>
-              <th>${t(language, direction.labelKey)}</th>
+              ${
+                showDirectionColumn
+                  ? `<th class="direction-header" title="${t(language, direction.labelKey)}">${directionArrow[direction.id]}</th>`
+                  : ""
+              }
               ${RANKS.map(
                 (rank) => `
                   <td>
@@ -40,7 +70,7 @@ async function render() {
                       data-direction="${direction.id}"
                       title="${t(language, rank.labelKey)} · ${t(language, direction.labelKey)}"
                     >
-                      ${trianglesPreviewSvg(rank.count, direction.id, settings.colors[rank.id])}
+                      ${iconStackPreviewSvg(settings.iconShape, rank.count, direction.id, settings.colors[rank.id])}
                     </button>
                   </td>
                 `
@@ -49,11 +79,14 @@ async function render() {
           `
         ).join("")}
       </tbody>
+      <tfoot>
+        <tr>
+          ${showDirectionColumn ? "<td></td>" : ""}
+          <td colspan="${RANKS.length - 1}"><button class="clear-button">${t(language, "clear")}</button></td>
+          <td><button class="settings-button" title="${t(language, "settings")}">⚙</button></td>
+        </tr>
+      </tfoot>
     </table>
-    <div class="actions">
-      <button class="clear-button">${t(language, "clear")}</button>
-      <button class="settings-button" title="${t(language, "settings")}">⚙</button>
-    </div>
   `;
 
   document
@@ -77,7 +110,7 @@ async function render() {
         id: getPluginId("settings-modal"),
         url: "/settings.html",
         width: 340,
-        height: 460,
+        height: 570,
       });
     });
 

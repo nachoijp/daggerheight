@@ -3,21 +3,31 @@ import { getPluginId } from "./pluginId";
 import { isPlainObject } from "./util";
 import type { Metadata } from "@owlbear-rodeo/sdk";
 import type { Language } from "./i18n";
-import type { Position, RankId } from "./altitude";
-import { DEFAULT_COLORS, POSITIONS } from "./altitude";
+import type { IconShape, Position, RankId } from "./altitude";
+import { DEFAULT_COLORS, ICON_SHAPES, POSITIONS } from "./altitude";
 
 export interface AltitudeSettings {
+  iconShape: IconShape;
   iconSize: number;
+  iconDistance: number;
   colors: Record<RankId, string>;
   position: Position;
   scaleWithToken: boolean;
+  showDown: boolean;
+  showRankLabels: boolean;
 }
 
+export const MAX_ICON_DISTANCE = 0.4;
+
 export const DEFAULT_SETTINGS: AltitudeSettings = {
+  iconShape: "TRIANGLE",
   iconSize: 1,
+  iconDistance: 0.12,
   colors: { ...DEFAULT_COLORS },
   position: "LEFT",
   scaleWithToken: true,
+  showDown: true,
+  showRankLabels: true,
 };
 
 const SETTINGS_KEY = getPluginId("settings");
@@ -26,16 +36,27 @@ const LANGUAGE_KEY = getPluginId("language");
 function mergeSettings(stored: unknown): AltitudeSettings {
   if (!isPlainObject(stored)) {
     return {
+      iconShape: DEFAULT_SETTINGS.iconShape,
       iconSize: DEFAULT_SETTINGS.iconSize,
+      iconDistance: DEFAULT_SETTINGS.iconDistance,
       colors: { ...DEFAULT_SETTINGS.colors },
       position: DEFAULT_SETTINGS.position,
       scaleWithToken: DEFAULT_SETTINGS.scaleWithToken,
+      showDown: DEFAULT_SETTINGS.showDown,
+      showRankLabels: DEFAULT_SETTINGS.showRankLabels,
     };
   }
+  const iconShape = ICON_SHAPES.some((shape) => shape.id === stored.iconShape)
+    ? (stored.iconShape as IconShape)
+    : DEFAULT_SETTINGS.iconShape;
   const iconSize =
     typeof stored.iconSize === "number" && Number.isFinite(stored.iconSize)
       ? Math.min(2, Math.max(0.5, stored.iconSize))
       : DEFAULT_SETTINGS.iconSize;
+  const iconDistance =
+    typeof stored.iconDistance === "number" && Number.isFinite(stored.iconDistance)
+      ? Math.min(MAX_ICON_DISTANCE, Math.max(0, stored.iconDistance))
+      : DEFAULT_SETTINGS.iconDistance;
   const colors = {
     ...DEFAULT_SETTINGS.colors,
     ...(isPlainObject(stored.colors) ? stored.colors : {}),
@@ -47,7 +68,22 @@ function mergeSettings(stored: unknown): AltitudeSettings {
     typeof stored.scaleWithToken === "boolean"
       ? stored.scaleWithToken
       : DEFAULT_SETTINGS.scaleWithToken;
-  return { iconSize, colors, position, scaleWithToken };
+  const showDown =
+    typeof stored.showDown === "boolean" ? stored.showDown : DEFAULT_SETTINGS.showDown;
+  const showRankLabels =
+    typeof stored.showRankLabels === "boolean"
+      ? stored.showRankLabels
+      : DEFAULT_SETTINGS.showRankLabels;
+  return {
+    iconShape,
+    iconSize,
+    iconDistance,
+    colors,
+    position,
+    scaleWithToken,
+    showDown,
+    showRankLabels,
+  };
 }
 
 export async function getSettings(): Promise<AltitudeSettings> {

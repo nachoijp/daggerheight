@@ -7,6 +7,7 @@ function applyTheme(theme: Theme) {
   root.setProperty("--obr-text-secondary", theme.text.secondary);
   root.setProperty("--obr-primary-main", theme.primary.main);
   root.setProperty("--obr-primary-contrast", theme.primary.contrastText);
+  root.setProperty("--obr-background-paper", theme.background.paper);
 
   const isDark = theme.mode === "DARK";
   root.setProperty("--obr-overlay", isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)");
