@@ -14,8 +14,9 @@ learn-more: https://github.com/nachoijp/daggerheight#readme
 # Daggerheight
 
 A simple altitude/range marker for the **Daggerheart** tabletop RPG. Adds an item
-to any token's context menu to mark one of the system's 8 range bands, shown as
-colored, stacked triangles right on the token.
+to any token's context menu to mark one of the system's range bands, shown as
+colored icons right on the token — choose from several icon shapes and
+color themes in Settings.
 
 ![Range picker](https://raw.githubusercontent.com/nachoijp/daggerheight/main/docs/header.png)
 
@@ -26,17 +27,28 @@ colored, stacked triangles right on the token.
 3. Pick a range (Very Close, Close, Far, Very Far) and a direction (Up or Down).
    Clicking the same marker again removes it.
 
-![All 8 range markers](https://raw.githubusercontent.com/nachoijp/daggerheight/main/docs/screenshot-ranges.png)
+![Markers on several tokens](https://raw.githubusercontent.com/nachoijp/daggerheight/main/docs/screenshot-ranges.png)
 
 Each token can have its own marker, and markers move together with their
 token (scaling with it too, unless you turn that off in settings).
 
+## Icon shapes
+
+Triangles that point up or down, or shapes that grow/shrink in size to show
+direction instead: bars, circles, diamonds, squares, stars, a stepped
+triangle, or a themed feather/shovel pair.
+
+![Bar-shaped markers](https://raw.githubusercontent.com/nachoijp/daggerheight/main/docs/screenshot-shapes-bars.png)
+![Feather and shovel markers](https://raw.githubusercontent.com/nachoijp/daggerheight/main/docs/screenshot-shapes-feather.png)
+
 ## Settings
 
 The gear icon opens a settings panel (shared by the whole room, set by the GM)
-to customize icon size, colors per range, where the markers are placed
-relative to the token (left, right, top, or bottom), and whether markers
-scale with the token or keep a fixed size when you resize it.
+to customize the icon shape, size, and spacing from the token; colors per
+range (or a one-click theme matching the [Ranges](https://extensions.owlbear.rodeo/ranges)
+extension's colorblind-friendly palettes); where markers sit relative to the
+token; whether they scale with it; and whether the "Down" direction and range
+labels are shown at all. Changes preview live as you make them.
 
 ![Settings panel](https://raw.githubusercontent.com/nachoijp/daggerheight/main/docs/screenshot-settings.png)
 
