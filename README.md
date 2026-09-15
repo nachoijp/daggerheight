@@ -1,8 +1,10 @@
 # Daggerheight
 
-An [Owlbear Rodeo](https://www.owlbear.rodeo/) extension that marks **Daggerheart**
-range bands directly on a token: Very Close, Close, Far, Very Far — each Up or
-Down — shown as colored icons next to the token.
+An [Owlbear Rodeo](https://www.owlbear.rodeo/) extension that marks distance or
+range bands directly on a token — Daggerheart's Very Close/Close/Far/Very Far
+by default, but fully customizable: define your own set of distances (in feet,
+meters, or anything else) for any game system, shown as colored icons or
+numeric labels next to the token.
 
 ![Range picker](docs/header.png)
 
@@ -18,89 +20,67 @@ https://daggerheight.ijpedraza.com/manifest.json
 
 1. Select a token on the Character, Mount, or Prop layer and open its context menu.
 2. Click **Altitude**.
-3. Pick a range and a direction. Clicking the same marker again removes it.
+3. Pick a distance and a direction. Clicking the same marker again removes it.
 
 ![Markers on several tokens](docs/screenshot-ranges.png)
 
 Each token keeps its own marker, and markers move and scale together with their
 token. Selecting multiple tokens (even across different layers) applies the
-change to all of them at once.
+change to all of them at once. When there are more distances than fit the
+panel's width, it scrolls horizontally instead of squeezing the columns.
+
+## Distance levels
+
+The **✏️** button opens the level editor, shared by the whole room and set by
+the GM:
+
+- Start from the **Daggerheart** preset (Very Close/Close/Far/Very Far) or the
+  **Dragons** preset (5/15/30/60/120 ft), or build your own from scratch —
+  add, remove, reorder, and rename as many levels as your game needs.
+- Each level renders either as **stacked icons** (like Daggerheart's bands) or
+  as a **numeric text label** (like a feet/meters distance) — pick per level.
+  A text label placed looking Down gets a "-" prefix so it reads differently
+  from the same distance Up.
+- **Color themes** — Base, and three colorblind-friendly variants
+  (Deuteranopia, Tritanopia, Protanopia) matching the
+  [Ranges](https://extensions.owlbear.rodeo/ranges) extension's palettes,
+  plus a grayscale option — recolor every level at once, by position. Colors
+  can still be fine-tuned per level afterward.
+- Save several custom presets and switch between them at any time; nothing
+  is lost when you switch away from one.
+
+![Level editor](docs/screenshot-levels.png)
+
+![Numeric distances on the panel](docs/screenshot-distances-text.png)
+![A numeric distance marker on a token](docs/screenshot-distances-marker.png)
 
 ## Icon shapes
 
-Pick from several icon styles in Settings — plain triangles that point up or
-down, or shapes that instead grow or shrink in size to show direction: bars,
-circles, diamonds, squares, stars, a stepped triangle, or a themed
-feather/shovel pair.
+For icon-mode levels, pick from several styles in the level editor — plain
+triangles that point up or down, or shapes that instead grow or shrink in
+size to show direction: bars, circles, diamonds, squares, stars, a stepped
+triangle, or a themed feather/shovel pair.
 
 ![Bar-shaped markers](docs/screenshot-shapes-bars.png)
 ![Feather and shovel markers](docs/screenshot-shapes-feather.png)
 
 ## Settings
 
-The gear icon opens a settings panel — shared by the whole room and set by the
-GM — to customize:
+The **⚙** button opens a separate settings panel — also shared by the room —
+for everything that isn't about the levels themselves:
 
-- **Icon shape**, size, and how far icons sit from the token.
-- **Colors per range**, or a one-click theme matching the colorblind-friendly
-  palettes from the [Ranges](https://extensions.owlbear.rodeo/ranges) extension.
+- **Icon size**, and how far markers sit from the token.
 - **Position** relative to the token (left, right, top, or bottom).
 - Whether markers **scale with the token** or stay a fixed size when you resize it.
-- Whether the **"Down" direction** and the **range labels** are shown at all,
+- Whether the **"Down" direction** and the **column labels** are shown at all,
   for a more compact panel when you don't need them.
+- **Language** (English or Spanish), as a per-player preference.
 
-Every change previews live on the board and in the picker as you make it —
-nothing is applied for real until you hit Save, and Cancel reverts everything.
+Every change in either panel previews live on the board and in the picker as
+you make it — nothing is applied for real until you hit Save, and Cancel
+reverts everything.
 
 ![Settings panel](docs/screenshot-settings.png)
-
-The interface itself is available in English and Spanish, as a per-player
-preference.
-
-## Development
-
-```
-npm install
-npm run dev
-```
-
-This starts a local dev server (`http://localhost:5173` by default). Owlbear
-Rodeo allows loading development extensions from `localhost` without HTTPS.
-
-To install the dev build in a room:
-
-1. Open a room in Owlbear Rodeo.
-2. Go to the extensions tab (plug icon) → **Add Custom Extension**.
-3. Paste the manifest URL: `http://localhost:5173/manifest.json`.
-
-With the dev server running, code changes hot-reload automatically.
-
-## Production build
-
-```
-npm run build
-```
-
-Generates the `dist/` folder, ready to deploy to any static host. Point
-Owlbear Rodeo at `https://<your-domain>/manifest.json` once deployed.
-
-## Project structure
-
-- `public/manifest.json` — extension metadata.
-- `background.html` / `src/background.ts` — runs once when the extension loads;
-  registers the context menu item, sized to fit whichever rows are visible.
-- `index.html` / `src/main.ts` — the range picker UI shown when the context
-  menu item is clicked.
-- `settings.html` / `src/settings-main.ts` — the settings modal (shape, size,
-  colors, position, language, and the live-preview logic).
-- `src/altitude.ts` — the 4 range bands, the 2 directions, and the icon-shape
-  geometry (shared between the on-map markers and the picker's preview icons).
-- `src/markers.ts` — creates/reads/deletes the marker (a `PATH` item attached
-  to the token) in the scene, and rebuilds every marker when settings change.
-- `src/settings.ts` — reads/writes settings (room metadata) and language
-  (player metadata).
-- `src/theme.ts` — syncs Owlbear Rodeo's light/dark theme into CSS variables.
-- `src/i18n.ts` — UI strings (English/Spanish).
 
 ## Support
 

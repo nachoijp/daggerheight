@@ -30,25 +30,28 @@ const DISALLOWED_LAYERS = ALL_LAYERS.filter(
   (layer) => !ALLOWED_LAYERS.includes(layer)
 );
 
-// Row-height constants mirror the layout rules in style.css
-// (.altitude-table th, .rank-button, .altitude-table tfoot td) and the
-// border-spacing set on .altitude-table, so the embed is sized to fit
-// exactly whichever rows are actually visible instead of leaving dead
-// space (or clipping content) when labels/directions are toggled off.
+// Row-height constants mirror the layout rules in style.css (.altitude-table
+// th, .rank-button, .footer-row) and the border-spacing set on
+// .altitude-table, so the embed is sized to fit exactly whichever rows are
+// actually visible instead of leaving dead space (or clipping content) when
+// labels/directions are toggled off.
 const THEAD_HEIGHT = 33;
 const TBODY_ROW_HEIGHT = 52;
-const TFOOT_HEIGHT = 38;
+// .footer-row now lives outside the table (see style.css) so it isn't part
+// of the table's own row/border-spacing math below.
+const FOOTER_HEIGHT = 32;
+const FOOTER_MARGIN_TOP = 9;
 const ROW_SPACING = 3;
 const APP_PADDING = 16;
 
 function computeEmbedHeight(settings: AltitudeSettings): number {
   const directionRows = settings.showDown ? 2 : 1;
-  const rows = (settings.showRankLabels ? 1 : 0) + directionRows + 1;
-  const contentHeight =
+  const tableRows = (settings.showRankLabels ? 1 : 0) + directionRows;
+  const tableHeight =
     (settings.showRankLabels ? THEAD_HEIGHT : 0) +
     directionRows * TBODY_ROW_HEIGHT +
-    TFOOT_HEIGHT;
-  return contentHeight + (rows + 1) * ROW_SPACING + APP_PADDING;
+    (tableRows + 1) * ROW_SPACING;
+  return tableHeight + FOOTER_MARGIN_TOP + FOOTER_HEIGHT + APP_PADDING;
 }
 
 /**

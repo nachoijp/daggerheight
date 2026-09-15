@@ -1,69 +1,173 @@
 import { Command } from "@owlbear-rodeo/sdk";
 import type { PathCommand } from "@owlbear-rodeo/sdk";
-import type { StringKey } from "./i18n";
+import type { Language, StringKey } from "./i18n";
+import { t } from "./i18n";
 
 export type Direction = "UP" | "DOWN";
-export type RankId = "MUY_CERCA" | "CERCA" | "LEJOS" | "MUY_LEJOS";
 export type Position = "LEFT" | "RIGHT" | "TOP" | "BOTTOM";
+export type RenderMode = "ICONS" | "TEXT";
 
 export const POSITIONS: Position[] = ["LEFT", "RIGHT", "TOP", "BOTTOM"];
 
-export interface AltitudeRank {
-  id: RankId;
-  count: number;
-  labelKey: StringKey;
-}
-
-/** The four Daggerheart range bands, from nearest to farthest */
-export const RANKS: AltitudeRank[] = [
-  { id: "MUY_CERCA", count: 1, labelKey: "rankMuyCerca" },
-  { id: "CERCA", count: 2, labelKey: "rankCerca" },
-  { id: "LEJOS", count: 3, labelKey: "rankLejos" },
-  { id: "MUY_LEJOS", count: 4, labelKey: "rankMuyLejos" },
-];
-
-export const DEFAULT_COLORS: Record<RankId, string> = {
-  MUY_CERCA: "#3b82f6",
-  CERCA: "#22c55e",
-  LEJOS: "#eab308",
-  MUY_LEJOS: "#f97316",
-};
-
-export interface ColorPreset {
-  id: string;
-  name: string;
-  colors: Record<RankId, string>;
+/**
+ * Level labels and preset names are free text the DM types in, but they get
+ * interpolated straight into innerHTML/attribute strings in main.ts and
+ * levels-main.ts - escape before every such use so a "<" or a stray quote
+ * can't break the markup or, worse, inject a script tag that every viewer's
+ * panel would then execute (settings are shared room metadata, rendered to
+ * every connected client).
+ */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 /**
- * Color palettes matching the Owlbear Rodeo "Ranges" extension's built-in
- * themes (github.com/owlbear-rodeo/ranges), so users can visually pair the
- * two extensions' colors by hand. Ranges' ring 0 is always "Melee", which we
- * have no icon for, so we skip it and take its rings 1-4 (Very Close, Close,
- * Far, Very Far) to match our 4 rank bands.
+ * A TEXT-mode level's label ("5 ft") reads the same whether it was placed
+ * looking Up or Down, unlike ICONS mode where the icon shape itself points
+ * up/down - so a numeric label gets a "-" prefix for Down to disambiguate.
+ * Non-numeric labels (a custom level not describing a distance) are left
+ * untouched, since a leading "-" wouldn't clarify anything for those.
  */
-export const COLOR_PRESETS: ColorPreset[] = [
-  {
-    id: "base",
-    name: "Base",
-    colors: { MUY_CERCA: "#198de6", CERCA: "#6cbf15", LEJOS: "#deaa19", MUY_LEJOS: "#e16919" },
-  },
-  {
-    id: "deuteranopia",
-    name: "Deuteranopia",
-    colors: { MUY_CERCA: "#e68919", CERCA: "#15a5bf", LEJOS: "#19de76", MUY_LEJOS: "#b419e1" },
-  },
-  {
-    id: "tritanopia",
-    name: "Tritanopia",
-    colors: { MUY_CERCA: "#b819e6", CERCA: "#1572bf", LEJOS: "#de7d19", MUY_LEJOS: "#3be119" },
-  },
-  {
-    id: "protanopia",
-    name: "Protanopia",
-    colors: { MUY_CERCA: "#19e672", CERCA: "#157fbf", LEJOS: "#dede19", MUY_LEJOS: "#e119d9" },
-  },
+export function directionalLabel(label: string, direction: Direction): string {
+  if (direction === "DOWN" && /^\d/.test(label.trim())) {
+    return `-${label}`;
+  }
+  return label;
+}
+
+/**
+ * Fixed ids/labelKeys for Daggerheart's 4 original range bands. Kept only as
+ * the source of truth for the built-in "Daggerheart" level preset and for
+ * migrating rooms saved before custom levels existed - markers already
+ * placed in those rooms have these exact ids baked into their persisted
+ * metadata, so changing them would silently orphan every marker on the board.
+ */
+const LEGACY_RANKS: { id: string; labelKey: StringKey }[] = [
+  { id: "MUY_CERCA", labelKey: "rankMuyCerca" },
+  { id: "CERCA", labelKey: "rankCerca" },
+  { id: "LEJOS", labelKey: "rankLejos" },
+  { id: "MUY_LEJOS", labelKey: "rankMuyLejos" },
 ];
+
+export interface AltitudeLevel {
+  id: string;
+  label: string;
+  /**
+   * Present only on an un-edited built-in level; when set, the UI re-derives
+   * the displayed text via `t(language, labelKey)` so it still translates
+   * per-viewer. Cleared the moment a DM edits that level's label by hand,
+   * since a hand-typed label ("10 ft") isn't a translation key anymore.
+   */
+  labelKey?: StringKey;
+  color: string;
+  renderMode: RenderMode;
+}
+
+/** Resolves what a level's label should actually display for a given viewer/placer language */
+export function resolveLevelLabel(level: AltitudeLevel, language: Language): string {
+  return level.labelKey ? t(language, level.labelKey) || level.label : level.label;
+}
+
+export interface ColorTheme {
+  id: string;
+  labelKey: StringKey;
+  colors: string[];
+}
+
+/**
+ * Ported (as hex) from github.com/owlbear-rodeo/ranges' src/theme/themes.ts.
+ * Ranges applies these by ring INDEX with wraparound
+ * (`theme.colors[i % theme.colors.length]`), not by a fixed ring id - the
+ * same pattern this extension uses via themeColorAt() below, since the level
+ * list is variable-length instead of a fixed 4-entry record. Base/
+ * Deuteranopia/Tritanopia/Protanopia are proper nouns (same spelling in
+ * es/en), only "grayscale" actually differs per language.
+ */
+export const THEMES: ColorTheme[] = [
+  { id: "base", labelKey: "themeBase", colors: ["#8C4BEB", "#198DE6", "#6CBF15", "#DEAA19", "#E16919", "#E1198E"] },
+  { id: "deuteranopia", labelKey: "themeDeuteranopia", colors: ["#8A4BEB", "#E68919", "#15A5BF", "#19DE76", "#B419E1", "#EBBB4B"] },
+  { id: "tritanopia", labelKey: "themeTritanopia", colors: ["#4BCDEB", "#B819E6", "#1572BF", "#DE7D19", "#3BE119", "#EB4B54"] },
+  { id: "protanopia", labelKey: "themeProtanopia", colors: ["#8C4BEB", "#19E672", "#157FBF", "#DEDE19", "#E119D9", "#EB9C4B"] },
+  { id: "grayscale", labelKey: "themeGrayscale", colors: ["#e5e7eb", "#b8bcc4", "#8b909c", "#5f6474", "#3a3d4a", "#1f2129"] },
+];
+
+export const DEFAULT_THEME: ColorTheme = THEMES[0];
+
+export function getTheme(id: string): ColorTheme {
+  return THEMES.find((theme) => theme.id === id) ?? DEFAULT_THEME;
+}
+
+export function themeColorAt(theme: ColorTheme, index: number, startOffset: number): string {
+  return theme.colors[(index + startOffset) % theme.colors.length];
+}
+
+/** Perceptual-brightness check so a TEXT-mode level's label stays readable on any color */
+export function readableTextColor(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.55 ? "#111827" : "#ffffff";
+}
+
+export interface LevelPreset {
+  id: string;
+  name: string;
+  builtIn: boolean;
+  /** Index into a theme's color array that level 0 maps to; see daggerheartLevels() for why this isn't always 0. */
+  colorStartIndex: number;
+  levels: AltitudeLevel[];
+}
+
+/**
+ * Daggerheart's level 0 is "Muy cerca"; theme index 0 (in Ranges' own
+ * palettes, which these themes are ported from) is reserved for Melee -
+ * which Daggerheight deliberately doesn't mark for height since it's
+ * redundant - so this preset skips that color and starts at index 1.
+ */
+export function daggerheartLevels(theme: ColorTheme): AltitudeLevel[] {
+  return LEGACY_RANKS.map((rank, index) => ({
+    id: rank.id,
+    label: t("en", rank.labelKey),
+    labelKey: rank.labelKey,
+    color: themeColorAt(theme, index, 1),
+    renderMode: "ICONS",
+  }));
+}
+
+/** Preserves whatever colors an old (pre-custom-levels) room already had */
+export function legacyLevelsFromColors(colors: Record<string, unknown>): AltitudeLevel[] {
+  return LEGACY_RANKS.map((rank, index) => ({
+    id: rank.id,
+    label: t("en", rank.labelKey),
+    labelKey: rank.labelKey,
+    color: typeof colors[rank.id] === "string" ? (colors[rank.id] as string) : themeColorAt(DEFAULT_THEME, index, 1),
+    renderMode: "ICONS",
+  }));
+}
+
+const DRAGONS_LABELS = ["5 ft", "15 ft", "30 ft", "60 ft", "120 ft"];
+
+export function dragonsLevels(theme: ColorTheme): AltitudeLevel[] {
+  return DRAGONS_LABELS.map((label, index) => ({
+    id: `dragons-${index}`,
+    label,
+    color: themeColorAt(theme, index, 0),
+    renderMode: "TEXT",
+  }));
+}
+
+export function builtInPresets(theme: ColorTheme): LevelPreset[] {
+  return [
+    { id: "daggerheart", name: "Daggerheart", builtIn: true, colorStartIndex: 1, levels: daggerheartLevels(theme) },
+    { id: "dragons", name: "Dragons", builtIn: true, colorStartIndex: 0, levels: dragonsLevels(theme) },
+  ];
+}
 
 export const DIRECTIONS: { id: Direction; labelKey: StringKey }[] = [
   { id: "UP", labelKey: "directionUp" },
@@ -71,12 +175,12 @@ export const DIRECTIONS: { id: Direction; labelKey: StringKey }[] = [
 ];
 
 export interface AltitudeMarkerState {
-  rank: RankId;
+  levelId: string;
   direction: Direction;
 }
 
-export function buttonId(rankId: string, direction: Direction) {
-  return `altitude-btn-${rankId}-${direction}`;
+export function buttonId(levelId: string, direction: Direction) {
+  return `altitude-btn-${levelId}-${direction}`;
 }
 
 interface Point {

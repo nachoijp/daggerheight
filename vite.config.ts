@@ -17,6 +17,7 @@ export default defineConfig({
         main: resolve(root, "index.html"),
         background: resolve(root, "background.html"),
         settings: resolve(root, "settings.html"),
+        levels: resolve(root, "levels.html"),
       },
     },
   },

@@ -5,6 +5,7 @@ body {
 
 body {
   margin: 0;
+  height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
     "Helvetica Neue", sans-serif;
@@ -14,15 +15,70 @@ body {
   background: transparent;
 }
 
+/*
+ * A flex column filling the whole (fixed-height) embed/modal frame, so any
+ * slack between our best-guess declared height and the content's actual
+ * height gets absorbed gracefully - by .level-list growing (levels.html) or
+ * .settings-actions' auto top margin (settings.html) - instead of showing
+ * up as dead space below the last control, and so a list that grows/shrinks
+ * (adding or removing a level) never shifts Cancel/Save's position.
+ */
 #app {
   padding: 8px;
   box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.picker-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.picker-scroll,
+.custom-select-menu,
+.level-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--obr-overlay-hover, rgba(255, 255, 255, 0.14)) transparent;
+}
+
+.picker-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.picker-scroll::-webkit-scrollbar-track,
+.custom-select-menu::-webkit-scrollbar-track,
+.level-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.picker-scroll::-webkit-scrollbar-thumb,
+.custom-select-menu::-webkit-scrollbar-thumb,
+.level-list::-webkit-scrollbar-thumb {
+  background-color: var(--obr-overlay-hover, rgba(255, 255, 255, 0.14));
+  border-radius: 4px;
+}
+
+.picker-scroll::-webkit-scrollbar-thumb:hover,
+.custom-select-menu::-webkit-scrollbar-thumb:hover,
+.level-list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--obr-overlay-selected, rgba(255, 255, 255, 0.22));
 }
 
 .altitude-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 3px;
+  /*
+   * Fixed layout keeps every level column the same width regardless of its
+   * header text length (a long label wraps instead of stretching its own
+   * column wider than its neighbors) - it needs an explicit width to divide
+   * evenly, which main.ts supplies as an inline min-width computed from the
+   * level count, so the table can still grow past 100% and let
+   * .picker-scroll's horizontal scrollbar take over once there are enough
+   * levels to no longer fit at a readable width.
+   */
   table-layout: fixed;
 }
 
@@ -36,10 +92,6 @@ body {
 
 .altitude-table td {
   padding: 0;
-}
-
-.altitude-table tfoot td {
-  padding-top: 6px;
 }
 
 .direction-col {
@@ -69,6 +121,24 @@ body {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   transition: background-color 100ms ease, border-color 100ms ease;
+}
+
+/*
+ * The button's own box stays a fixed size regardless of content (52px tall,
+ * clipped overflow above), but what's INSIDE it varies a lot now: icon-mode
+ * stacks grow with both level position (more icons the further the level)
+ * and the DM's icon-size setting, and a level list is no longer capped at 4
+ * entries. Without this, a big stack or a long custom preset just gets
+ * cropped by overflow:hidden instead of shrinking to fit. Constraining only
+ * max-width/max-height (no explicit width/height) lets the SVG keep its
+ * tuned natural size whenever it already fits, and only scales it down -
+ * preserving aspect ratio, since only one axis needs to bind - once it
+ * doesn't. Same idea validated in the levels-editor mockup.
+ */
+.rank-button svg {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .rank-button:hover {
@@ -113,6 +183,50 @@ body {
 .settings-button:focus-visible {
   outline: 2px solid var(--obr-primary-main, #3b82f6);
   outline-offset: 1px;
+}
+
+.footer-row {
+  display: flex;
+  gap: 3px;
+  /* Lives outside .picker-scroll now (so it's always reachable without
+     scrolling), which means it no longer gets the table's border-spacing
+     gap above it - replicate that spacing by hand. */
+  margin-top: 9px;
+}
+
+.footer-row .footer-clear {
+  flex: 3;
+  width: auto;
+}
+
+.footer-row .footer-icon-btn {
+  flex: 1;
+  width: auto;
+}
+
+/* Keeps "Quitar marcador" starting under the first level column instead of
+   the direction/arrow column, matching the table's own direction-col width */
+.footer-spacer {
+  flex: none;
+  width: 20px;
+}
+
+.level-pill-preview {
+  display: inline-block;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  /* MIN_COLUMN_WIDTH (main.ts) is sized for a 3-digit distance ("-120 ft")
+     on one line; text-overflow is just a fallback for anything longer, so
+     it degrades to "..." rather than breaking the fixed row height. */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
+  padding: 3px 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  box-sizing: border-box;
 }
 
 /* Settings modal */
@@ -194,6 +308,12 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   max-height: 200px;
   overflow-y: auto;
+}
+
+/* Vertical scrollbar thickness for these two (.picker-scroll's horizontal one is sized near its own rules above) */
+.custom-select-menu::-webkit-scrollbar,
+.level-list::-webkit-scrollbar {
+  width: 8px;
 }
 
 .custom-select-option {
@@ -415,7 +535,11 @@ body {
 .settings-actions {
   display: flex;
   gap: 6px;
-  margin-top: 18px;
+  /* Pins Cancel/Save to the bottom of #app's flex column - on the Levels
+     modal .level-list (flex:1) already soaks up any slack, but this also
+     covers the Opciones modal, which has no growing element of its own. */
+  margin-top: auto;
+  padding-top: 18px;
 }
 
 .primary-button,
@@ -452,4 +576,168 @@ body {
 .secondary-button:focus-visible {
   outline: 2px solid var(--obr-primary-main, #3b82f6);
   outline-offset: 1px;
+}
+
+/* Levels modal */
+
+.preset-name-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.preset-name-row input[type="text"] {
+  flex: 1;
+  height: 30px;
+  box-sizing: border-box;
+  background-color: var(--obr-overlay, rgba(255, 255, 255, 0.06));
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--obr-text-primary, #fff);
+  font-size: 13px;
+  padding: 0 8px;
+  font-family: inherit;
+}
+
+.preset-name-row input[type="text"]:focus-visible {
+  border-color: var(--obr-primary-main, #3b82f6);
+  outline: 0;
+}
+
+.icon-btn {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  background-color: var(--obr-overlay, rgba(255, 255, 255, 0.06));
+  border: 0;
+  border-radius: 6px;
+  color: var(--obr-text-primary, #fff);
+  font-size: 13px;
+}
+
+.icon-btn:hover {
+  background-color: var(--obr-overlay-hover, rgba(255, 255, 255, 0.14));
+}
+
+.level-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 10px;
+  /* Grows to fill whatever's left in the modal's flex column (see #app)
+     instead of a fixed/max height, so adding or removing a level never
+     shifts the Cancel/Save row below it - only once content actually
+     outgrows the available space does this scroll internally. */
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.level-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--obr-overlay, rgba(255, 255, 255, 0.06));
+  border-radius: 8px;
+  padding: 6px;
+}
+
+.level-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--obr-overlay-hover, rgba(255, 255, 255, 0.14));
+  color: var(--obr-text-primary, #fff);
+  font-size: 13px;
+  padding: 4px 2px;
+  outline: 0;
+  font-family: inherit;
+}
+
+.level-row input[type="text"]:focus-visible {
+  border-color: var(--obr-primary-main, #3b82f6);
+}
+
+.level-row input[type="color"] {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  flex: none;
+}
+
+.level-reorder {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+}
+
+.level-reorder button,
+.level-remove,
+.mode-btn {
+  cursor: pointer;
+  background-color: var(--obr-overlay, rgba(255, 255, 255, 0.06));
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--obr-text-primary, #fff);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.level-reorder button {
+  width: 18px;
+  height: 14px;
+  padding: 0;
+}
+
+.level-reorder button:disabled,
+.level-remove:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.level-remove {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  font-size: 13px;
+}
+
+.mode-toggle {
+  display: flex;
+  flex: none;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mode-btn {
+  border-radius: 0;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+.mode-btn.active {
+  background-color: var(--obr-primary-main, #3b82f6);
+  color: var(--obr-primary-contrast, #fff);
+}
+
+.add-level-btn {
+  width: 100%;
+  height: 32px;
+  cursor: pointer;
+  background-color: var(--obr-overlay, rgba(255, 255, 255, 0.06));
+  border: 1px dashed var(--obr-overlay-hover, rgba(255, 255, 255, 0.14));
+  border-radius: 6px;
+  color: var(--obr-text-primary, #fff);
+  font-size: 13px;
+}
+
+.add-level-btn:hover {
+  background-color: var(--obr-overlay-hover, rgba(255, 255, 255, 0.14));
 }
